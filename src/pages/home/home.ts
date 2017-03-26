@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { NavController, ActionSheetController, ToastController, Platform, LoadingController, Loading } from 'ionic-angular';
+import { NavController, ActionSheetController, ToastController, Platform, LoadingController, Loading, ModalController, AlertController } from 'ionic-angular';
 import { Camera, File, Transfer, FilePath } from 'ionic-native';
+import { PopPage } from '../pop/pop';
  
 declare var cordova: any;
  
@@ -11,8 +12,9 @@ declare var cordova: any;
 export class HomePage {
   lastImage: string = null;
   loading: Loading;
+  noMatch = true;
  
-  constructor(public navCtrl: NavController, public actionSheetCtrl: ActionSheetController, public toastCtrl: ToastController, public platform: Platform, public loadingCtrl: LoadingController) {}
+  constructor(public navCtrl: NavController, public actionSheetCtrl: ActionSheetController, public toastCtrl: ToastController, public platform: Platform, public loadingCtrl: LoadingController, public modalCtrl: ModalController, public alertCtrl: AlertController) {}
  
 	public presentActionSheet() {
 		let actionSheet = this.actionSheetCtrl.create({
@@ -104,6 +106,20 @@ export class HomePage {
 	  	}
 	}
 
+	public presentModal(name, face_token) {
+    	let modal = this.modalCtrl.create(PopPage, {name:name, face_token:face_token});
+    	modal.present();
+	}
+
+	public showAlert() {
+		let alert = this.alertCtrl.create({
+	  		title: 'No Match Found!',
+	  		subTitle: 'sorry this kid is not a member!',
+	  		buttons: ['OK']
+		});
+		alert.present();
+	}
+
 	public uploadImage() {
   		// Destination URL
 		var url = "https://api-us.faceplusplus.com/facepp/v3/search";
@@ -132,11 +148,8 @@ export class HomePage {
   		// Use the FileTransfer to upload the image
 	  	fileTransfer.upload(targetPath, url, options).then((data) => {
 	    	this.loading.dismissAll()
-	    	this.presentToast('Image succesful uploaded.');
-
 	    	let obj = JSON.parse(data.response);
 
-	    	
 	    	// check if existing
 	    	let donees = [
 				{name:'ALDRED LINDIO',face_token:'b6a8f5ffe7b5acf1a426242ae4befb61'},
@@ -154,15 +167,28 @@ export class HomePage {
 
 			let search = obj.results[0];
 
-			if(search.confidence > 79) {
+			let q = new Promise((resolve, reject) => {
+				if(search.confidence >= 75) {
+					resolve(true);
+				} else {
+					reject(true);
+				}
+
+			});
+
+			q.then(() => {
+				this.presentToast('Image succesful uploaded.');
 				let value = donees.find(function (d) {
 				    return d.face_token == search.face_token;
 				}).name;
-				alert(value);
-			} else {
-				alert('Not Found!');
-			}
 
+				this.presentModal(value, search.face_token);
+				this.noMatch = true;
+			},() => {
+				this.noMatch = false;
+				this.showAlert();
+			});
+			
 
 	  	}, err => {
 	    	this.loading.dismissAll()
