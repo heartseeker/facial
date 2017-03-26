@@ -106,23 +106,23 @@ export class HomePage {
 
 	public uploadImage() {
   		// Destination URL
-  		var url = "http://yoururl/upload.php";
-	 
-  		// File for Upload
-  		var targetPath = this.pathForImage(this.lastImage);
-	 
-  		// File name only
-  		var filename = this.lastImage;
-	 
-  		var options = {
-	    	fileKey: "file",
-	    	fileName: filename,
-	    	chunkedMode: false,
-	    	mimeType: "multipart/form-data",
-	    	params : {'fileName': filename}
-	  	};
-	 
-  		const fileTransfer = new Transfer();
+		var url = "https://api-us.faceplusplus.com/facepp/v3/search";
+
+		// File for Upload
+		var targetPath = this.pathForImage(this.lastImage);
+
+		// File name only
+		var filename = this.lastImage;
+
+		var options = {
+			fileKey: "image_file",
+			fileName: filename,
+			chunkedMode: false,
+			mimeType: "multipart/form-data",
+			params : {'fileName': filename, 'api_key' : 'L3zlAkOiZow4SC_bpdiK25cY57T1Shki', 'api_secret': 'x973IIFodvKTvqA05zvLfFuYRoci9bRo', 'faceset_token':'160b7c939a5b5dbe7e5bea4f94327a33'}
+		};
+
+		const fileTransfer = new Transfer();
 	 
   		this.loading = this.loadingCtrl.create({
 	    	content: 'Uploading...',
@@ -130,12 +130,44 @@ export class HomePage {
 	  	this.loading.present();
 	 
   		// Use the FileTransfer to upload the image
-	  	fileTransfer.upload(targetPath, url, options).then(data => {
+	  	fileTransfer.upload(targetPath, url, options).then((data) => {
 	    	this.loading.dismissAll()
 	    	this.presentToast('Image succesful uploaded.');
+
+	    	let obj = JSON.parse(data.response);
+
+	    	
+	    	// check if existing
+	    	let donees = [
+				{name:'ALDRED LINDIO',face_token:'b6a8f5ffe7b5acf1a426242ae4befb61'},
+				{name:'ALEX ADRIAN NIEVES',face_token:'c4fd77a7aa991ab26f5c640ffba860a5'},
+				{name:'ANDREW SEVILLA',face_token:'751924140d38481481b6b3d0fc42a715'},
+				{name:'ANGELO LOCANA',face_token:'652df27a50b54ef26c0ec842d611c189'},
+				{name:'AXIEL RHO LOPEZ',face_token:'119ec185da0c959b530283c916f31def'},
+				{name:'ALIESA LACIA',face_token:'8c7a99e70a13cd4bc170fae24404fdbd'},
+				{name:'ANALYN ASEJO',face_token:'31dcdb93b152f8442de28f9030857c0d'},
+				{name:'CASSANDRA BALINES',face_token:'6952dc732136af966b339367a30c736b'},
+				{name:'CHERRY BIEN',face_token:'d9a4bd048ace65dbf7c4a09b7b4024ce'},
+				{name:'HANNAH MAE BONTO',face_token:'3279ded0bd940fa9cefb5c63e5e38853'},
+			];
+
+
+			let search = obj.results[0];
+
+			if(search.confidence > 79) {
+				let value = donees.find(function (d) {
+				    return d.face_token == search.face_token;
+				}).name;
+				alert(value);
+			} else {
+				alert('Not Found!');
+			}
+
+
 	  	}, err => {
 	    	this.loading.dismissAll()
 	    	this.presentToast('Error while uploading file.');
+	    	alert('Fail: ' + JSON.stringify(err));
 	  	});
 	}
 
